@@ -1,0 +1,137 @@
+====== Misc ======
+
+===== Check used ports =====
+
+To see a list of the ports currently used on your system, run:
+<code bash>
+netstat -tuln
+</code>
+
+===== Ping all the device in your LAN =====
+
+You can use nmap, specifying your current subnet.
+
+<code=bash>
+nmap -sP 192.168.1.0/24
+</code>
+
+===== Creating and deleting users from terminal =====
+
+To create a new user
+
+<code bash>
+adduser meloncrush
+usermod -aG sudo meloncrush
+</code>
+
+To delete a user
+
+<code bash>
+userdel -r username
+</code>
+
+===== Change hostname and local DNS =====
+
+To change the hostname in a machine, edit it in the following two files and replace the name with the one you want.
+
+<code bash>
+sudo nano /etc/hostname
+sudo nano /etc/hosts
+</code>
+
+===== Error =====
+
+If later you change the ip associated with one of the names, you might get an error like *"Host key for music has changed and you have requested strict checking."*
+To fix it, just update the ''known_hosts'' file with the command:
+
+<code bash>
+ssh-keygen -R broken-name
+</code>
+
+===== Temperature monitoring and stress testing =====
+
+Make sure that you have the ''lm-sensors'' packet installed.
+
+The fist time, configure the program:
+
+<code bash>
+sensors-detect
+</code>
+
+
+After that, just run
+<code>
+sensors
+</code>
+
+To make a dynamic view that updates every 2s, use
+<code>
+watch -n 2 sensors
+</code>
+
+If you have a Ryzen tho
+<code>
+watch -n 2 "sensors | grep 'Tctl'"
+</code>
+
+===== Stress testing =====
+
+The best tool that I have found for stress testing the CPU is ''stress-ng''. Install the packet, and a lot of testing will be available. 
+It's probably better to just view some of them from the [repo](https://github.com/ColinIanKing/stress-ng).
+
+===== Change file/dir ownership =====
+
+To change the ownership of all files and directories in the current directory and subdirectories:
+
+''sudo chown -R melon:melon''.
+
+===== USB devices prevents System Suspension =====
+
+USB devides, like the Logitech LogiBolt USB receiver for example, can prevent the system from entering a suspension state.
+To prevent this from happening, first run ''cat /proc/acpi/wakeup'' to see a list of devices that are enabled to wake up the system from sleep. Usb devices could be called ''USB'' or ''XHC'' for example.
+
+Let's say that the culprit is ''XHC'' for example. Everytime you ''echo'' the name of the device to the wakeup file, its state gets inverted. So, if right now it is enabled, run the following command to disable it:
+
+<code bash>
+echo "XHC" | sudo tee /proc/acpi/wakeup
+</code>
+
+Try to suspend the system.
+
+If suspension now works, we need to make the new rule permanent. We can do this with a systemctl unit.
+
+Start by creating a new ''systemd'' service file:
+
+<code bash>
+sudo nano /etc/systemd/system/disable-xhc-wakeup.service
+</code>
+
+And add the following content:
+<code bash>
+[Unit]
+Description=Disable XHC USB wakeup
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'echo "XHC" > /proc/acpi/wakeup'
+
+[Install]
+WantedBy=multi-user.target
+</code>
+
+Save and close. Now enable and start the service.
+
+<code bash>
+sudo systemctl enable --now disable-xhc-wakeup.service
+</code>
+
+Reboot the system, and ensure that it can suspend properly now.
+
+===== Partitioning a disk =====
+
+My favourite tool for partitioning disks is ''cfdisk''. You just write ''sudo cfdisk /dev/sda'' or any other device, and there is a nice terminal gui for it.
+
+===== TUI for Disk =====
+
+A nice tool for visualizing disk size and utilization is ''ncdu''.

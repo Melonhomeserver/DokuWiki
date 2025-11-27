@@ -1,0 +1,37 @@
+====== Vim =====
+
+===== Nvim Nchad =====
+
+==== Theming ====
+
+To open the theme menù, press ''SPC t h''.
+
+==== Syntax highlighting ====
+
+To install a new language
+
+<code bash>
+:TSInstall language-name
+</code>
+
+To view a list of all supported languages, and which one are installed
+
+<code bash>
+:TSInstallInfo
+</code>
+
+==== File tree ====
+
+You can open the file tree by pressing ''ctrl n''
+
+==== Search files ====
+
+To search for files in the current workspace, press ''SPACE f f''.
+
+To search only the currently open files, press ''SPACE f b''.
+
+==== Cheat sheet ====
+
+To open the cheat sheet, press ''SPACE c h''.
+
+If you just press ''SPACE'' and then wait, next keystroke suggestions will appear.

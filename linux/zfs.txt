@@ -1,0 +1,48 @@
+====== ZFS Commands =====
+
+Check zpool status
+
+<code bash>
+zpool status
+</code>
+
+To check it with deailed errors
+
+<code bash>
+zpool status -v rpool
+</code>
+
+I/O stats
+
+<code bash>
+zpool iostat
+</code>
+
+To verify the **ashift** value of your pools, from the Linux Shell, use:
+
+<code bash>
+sudo zpool get all | grep ashift
+</code>
+
+To verify the status of the pools:
+
+''zpool status -v'' if actions are necessary, they will be displayed by the output.
+
+To verify label data with the zfs debug tool:
+
+<code bash>
+zdb -l /dev/sdc1
+</code>
+
+This needs doublechecking, but if you want to fix a problem with the label:
+
+<code bash>
+zpool labelclear -f /dev/sdc1
+</code>
+===== Informational ZFS links =====
+
+  * OpenZFS hardware: [https://openzfs.github.io/openzfs-docs/Performance and Tuning/Hardware.html](https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Hardware.html)
+  * ZFS 101: [https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/](https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/)
+  * ZFS and ECC: [https://jrs-s.net/2015/02/03/will-zfs-and-non-ecc-ram-kill-your-data/](https://jrs-s.net/2015/02/03/will-zfs-and-non-ecc-ram-kill-your-data/)
+  * OpenZFS docs: [https://openzfs.github.io/openzfs-docs/index.html](https://openzfs.github.io/openzfs-docs/index.html)
+

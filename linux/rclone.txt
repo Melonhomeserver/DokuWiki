@@ -1,0 +1,95 @@
+====== Rclone ======
+
+==== Set up ====
+
+''rclone'' can be installed with ''sudo apt install rclone''. To configure it, run ''rclone config''.
+By default ''rclone'' opens the browser to execute authentication, which is not doable on a headless machine. 
+During configuration, remember to don't select auto configuration when asked.
+
+The following example shows how to use OneDrive.
+
+To copy a local directory to a OneDrive directory called backup:
+<code bash>
+rclone copy /home/source OneDrive:backup
+</code>
+
+==== Syncing directories ====
+
+Use the ''rclone sync'' command. The command syncs the files from the source to the destination, not both ways. So the destination will be overwritten, but the source will remain the same.
+
+<code bash>
+rclone sync --progress /path/to/local/dir OneDrive:/path/to/cloud/dir
+</code>
+
+==== Automating the sync ====
+
+To automate the sync, use ''crontab''. Open it with ''crontab -e''. To make a backup every day at 2am, add the following line:
+
+<code bash>
+0 2 * * * rclone sync /home/meloncrush/Camera OneDrive:Camera
+</code>
+
+===== Create and Configure the Crypt Remote =====
+
+Setting up an encrypted remote is very easy. First make sure you already have a working remote set up.
+
+Run the Rclone configuration again:
+
+<code bash>
+rclone config
+</code>
+
+**Add a new remote:**
+  * Choose ''n'' for a new remote.
+  * Name it something like ''OneDriveEncrypted''.
+  * For the storage type, you will see a list of numbers connected to different storage providers. Ignore them and just write ''crypt''.
+
+**Configure the crypt remote:**
+  * For the remote, enter ''OneDrive:PicturesEncrypted'' (replace ''PicturesEncrypted'' with the directory in OneDrive where you want to store the encrypted files).
+  * if you have a big tree of directories and subdirectories, choosing to  encrypt filename might prove problematic. The encryption makes the names longer, and if you have for example 6 nested folders, you might reach the path limit set by the cloud provider. In this case it's better to just choose ''obfuscate'' for file names, and nothing for directories.
+  * For the password, Rclone will prompt you to create a password for encryption. You can also create a password for the salt (optional but recommended for additional security). Don't forget to save the passwords somewhere!
+  * Choose your desired encryption settings for filenames and directory names. 
+
+**Back everything up:** Very important. Backup the content of ''~/.config/rclone/rclone.config'', you will need it to restore the data if you are in a different machine! You can also use that file to make the configuration in other machines quicker. 
+
+==== Syncing Encrypted Files ====
+
+Now you can sync your local pictures directory to the encrypted remote. It works exactly like the normal way, you just need to use the new remote name now.
+
+==== Restoring the backed up pictures ====
+
+From the same machine, you can just use:
+
+<code bash>
+rclone copy OneDriveEncrypted:PicturesEncrypted ~/Downloads
+</code>
+
+Rclone will decrypt the content automatically. Also ''sync'', ''mount'' etc will work.
+
+==== How can I download and decrypt the pictures from a different machine? ====
+
+To download your pictures from OneDrive and have them decrypted, you'll need to set up the same encrypted remote on your desktop using Rclone.
+
+**Configure Rclone on your desktop**: Run ''rclone config'' on your desktop and follow the prompts to set up a new remote. Choose "OneDrive" as the storage type and enter your OneDrive credentials.
+   
+**Set up the Encrypted remote**: Go to ''~/.config/rclone/rclone.conf'', in here you will see the OneDrive config. Paste the crypted config that you previously backed up. (*for me:* check on BitWarden, probably there). 
+If you run ''rclone config'' you'll see that the new config is now present.
+   
+**Mount the Encrypted remote**: This will make it easier to see and move the content of the directory.
+
+For my photoserver:
+<code bash>
+rclone mount OneDriveEncryptedPics:. /path/to/local/folder
+</code>
+
+For my fileserver:
+<code bash>
+rclone mount OneDriveEncryptedFiles:. /path/to/local/folder
+</code>
+
+For my serviceserver:
+<code bash>
+rclone mount OneDriveEncryptedServices:. /path/to/local/folder
+</code>
+
+**Sync or copy files**: You can use ''rclone sync'' or ''rclone copy'' to download your pictures from the Encrypted remote to your local folder.

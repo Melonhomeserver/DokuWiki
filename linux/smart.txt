@@ -1,0 +1,25 @@
+====== S.M.A.R.T. ======
+
+===== S.M.A.R.T. infos from terminal =====
+
+To see detailed info of the SMART results, use:
+
+''smartctl -a <device>''
+
+For example:
+
+''smartctl -a /dev/sda''
+
+Using ''smartctl -h'' you can obtain a list of other commands. If you don’t know what drives are mounted in you system use ''smartctl --scan''
+
+
+Just go to the Archwiki for detailed stuff ngl
+==== Monitor disks temperature =====
+
+You can monitor a disk temperature with
+
+<code>
+smartctl -a /dev/sda
+</code>
+
+And use something like watch to see the changes live

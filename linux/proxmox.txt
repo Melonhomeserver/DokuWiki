@@ -1,0 +1,290 @@
+====== Proxmox ======
+
+===== Network device changed =====
+
+When making changes to the hardware configuration, perform updates, or rebooting after a long time, it’s possible that the network interface name changes, especially if you Linux distributions, including Proxmox VE, sometimes rename network interfaces based on udev rules, especially when different network cards are detected or when there are BIOS/firmware updates.
+
+1. **Log into the Proxmox Server Directly**  
+Since you don’t have network access, log into the Proxmox server directly via a keyboard and monitor, or use IPMI/ILO (if your hardware supports it).   Since you don’t have network access, log into the Proxmox server directly via a keyboard and monitor, or use IPMI/ILO (if your hardware supports it). 
+
+2. **Check the Network Interface Names**  
+Run the following command to list all network interfaces and see if the expected interface (e.g., Run the following command to list all network interfaces and see if the expected interface (e.g., ''enpXsY'' or  or ''eth0'') matches the ) matches the ''vmbr0'' configuration: configuration:
+
+<code bash>
+ip a
+</code>
+
+Look for the network interface name associated with your actual physical network card. You should see    Look for the network interface name associated with your actual physical network card. You should see ''UP'' and  and ''RUNNING'' status if the interface is working. status if the interface is working.
+
+3. **Compare with ''/etc/network/interfaces'' Configuration**  
+Open the network configuration file to see which interface    Open the network configuration file to see which interface ''vmbr0'' is bridged to: is bridged to:
+
+<code bash>
+nano /etc/network/interfaces
+</code>
+
+In this file, check if    In this file, check if ''vmbr0'' is set to bridge to the correct physical interface (e.g.,  is set to bridge to the correct physical interface (e.g., ''eth0'', , ''enp3s0'', etc.). Here’s an example configuration line:, etc.). Here’s an example configuration line:
+
+<code bash>
+auto vmbr0
+iface vmbr0 inet static
+    address 192.168.1.23
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    bridge_ports enpXsY
+</code>
+
+If the ''bridge_ports'' line references an old or incorrect interface name, update it to match the output from the  line references an old or incorrect interface name, update it to match the output from the ''ip a'' command. command.
+
+4. **Update Interface Name if Needed**  
+If you find that the interface name changed (e.g.,    If you find that the interface name changed (e.g., ''eth0'' became  became ''enpXsY''), update ), update ''bridge_ports'' in  in ''/etc/network/interfaces'' accordingly, save the file, and then restart networking: accordingly, save the file, and then restart networking:
+
+<code bash>
+systemctl restart networking
+</code>
+
+5. **Check Network Connectivity**  
+Try pinging your router or another device on the network to see if connectivity is restored:   Try pinging your router or another device on the network to see if connectivity is restored:
+
+<code bash>
+ping 192.168.1.1
+</code>
+
+6. **Reboot if Necessary**  
+If restarting networking doesn’t work, rebooting the Proxmox server can sometimes resolve lingering issues.   If restarting networking doesn’t work, rebooting the Proxmox server can sometimes resolve lingering issues.    
+
+===== Message I wrote to Christian, integrate it in the wiki =====
+
+
+Ricordati di andare su ''/etc/network/interfaces'' e mettere l'ip che vuoi te e il gateway, e rimettere ''/etc/resolv.conf'' il tuo gateway qui
+===== Backups in ZFS Pool =====
+
+Make sure that you already created a ZFS Pool.
+
+Now that the pool has been created, we need to create a new dataset that is mounted to a directory. It is a best practice to have a separate dataset for each VM.
+
+Here, we’re going to create a new directory under /mnt/ and then two directories under that.
+
+<code bash>
+mkdir /mnt/hdd_pool_backups
+mkdir /mnt/hdd_pool_backups/docker_awme
+mkdir /mnt/hdd_pool_backups/win10_vm
+</code>
+
+Next, we need to create the datasets under the pools using `zfs`:
+
+<code bash>
+zfs create hdd_pool/backups
+zfs create hdd_pool/backups/docker_awme -o mountpoint=/mnt/hdd_pool_backups/docker_awme
+zfs create hdd_pool/backups/win10_vm -o mountpoint=/mnt/hdd_pool_backups/win10_vm
+</code>
+
+What this does is we are creating a dataset under the “hdd_pool” titled backup. Under that /backup/ dataset, we’re creating two datasets that point to their respective directory created in the previous step.
+
+You can see how that looks with ''zfs list''.
+
+Now we just need to create a Directory storage under the Datacenter.
+
+  * Navigate to Datacenter > Storage > Add > Directory and use the following information: 
+    * ID: name – I’m using hdd_pool_backup_docker_awme and hdd_pool_backup_win10_vm 
+    * Directory: `<absolute dataset path>` – This is the zfs dataset path, not the system file path. There should also be a leading forward slash (“/”) such as /hdd_pool/backups/docker_awme 
+    * Content: VZDump backup file * Set Backup Retention as needed
+
+Once you hit create, the directory will appear in the list.
+
+===== BTRFS Storage on Proxmox =====
+
+==== Identify Your SSDs ====
+
+First, you need to identify your SSD devices. Open a shell on your Proxmox server and run ''lsblk''. Look for the devices (e.g., ''/dev/sdb'', ''/dev/sdc'') corresponding to your new SSDs.
+
+==== Create the Btrfs Filesystem in RAID0 ====
+
+Use the identified SSD devices to create a RAID0 array. Replace ''/dev/sdb'' and ''/dev/sdc'' with your actual device names:
+
+<code bash>
+mkfs.btrfs -f -d raid0 -m raid0 /dev/sdb /dev/sdc
+</code>
+
+- ''-f'': Force creation (useful if there’s any existing data or filesystem on the drives).
+- ''-d raid0'': Data in RAID0 (striping).
+- ''-m raid0'': Metadata in RAID0 (also striped).
+
+This will format both SSDs and create a Btrfs RAID0 setup.
+
+==== Create a Mount Point ====
+
+Choose a location to mount your new RAID0 filesystem, e.g., ''/mnt/btrfs-raid0'':
+
+<code bsah>
+mkdir -p /mnt/btrfs-raid0
+</code>
+
+==== Mount the Filesystem ====
+
+Mount your new Btrfs RAID0 volume:
+
+<code bash>
+mount /dev/sdb /mnt/btrfs-raid0
+</code>
+
+You can verify the mount with:
+
+<code bash>
+df -h | grep btrfs
+</code>
+
+==== Make it Persistent Across Reboots ====
+
+Edit ''/etc/fstab'' and add the following entry:
+
+<code bash>
+/dev/sdb /mnt/btrfs-raid0 btrfs defaults 0 0
+</code>
+
+If you prefer, you can also use the UUID of the filesystem instead of ''/dev/sdb''. Get the UUID with:
+
+<code bash>
+blkid /dev/sdb
+</code>
+
+Add it to ''/etc/fstab'' like this:
+
+<code fstab>
+UUID=<your-uuid> /mnt/btrfs-raid0 btrfs defaults 0 0
+</code>
+
+Save and exit the editor.
+
+Test the ''/etc/fstab'' entry:
+
+<code bash>
+mount -a
+</code>
+
+If no errors are shown, you're good to go! ✅
+
+==== Verify RAID0 Setup ====
+
+Check the Btrfs filesystem information:
+
+<code bash>
+btrfs filesystem df /mnt/btrfs-raid0
+</code>
+
+You should see `Data, RAID0` and `Metadata, RAID0` in the output.
+
+Monitor Health: Regularly check the health of your array with:
+<code bash>
+btrfs device stats /mnt/btrfs-raid0
+</code>
+
+===== Chroot into Proxmox disk =====
+
+From either a live usb, or by connecting the disk to another computer via an enclosure, first check which one is the Proxmox disk using ''sudo fdisk -l''. For example: ''/dev/sda''. 
+The partitions are ''/dev/sda1'' for bios boot, ''/dev/sda2'' for efi system, and ''/dev/sda3'' for linux lvm.
+
+Check that everything is correct with the various scan utilities from lvm, and then activate the lvm partitions. 
+
+<code bash>
+sudo pvscan
+sudo vgscan
+sudo lvscan
+sudo vgchange -ay
+</code>
+
+Mount the partitions necessary to have a working system while chrooted:
+
+<code bash>
+sudo mount /dev/pve/root /mnt/pveroot
+sudo mount --bind /dev /mnt/pveroot/dev
+sudo mount --bind /proc /mnt/pveroot/proc
+sudo mount --bind /sys /mnt/pveroot/sys
+</code>
+
+Now chroot into it:
+
+<code bash>
+sudo chroot /mnt/pveroot/
+</code>
+
+==== Edit the GRUB configuration while chrooted ====
+
+While inside, edit ''/etc/default/grub'' as usual. When you are done with the editing, run
+
+<code bash>
+update-grub
+</code>
+
+After successfully updating GRUB, you can exit the chroot environment with ''exit''.
+Finally, unmount the filesystems you mounted earlier:
+
+<code bash>
+sudo umount /mnt/pveroot/dev
+sudo umount /mnt/pveroot/proc
+sudo umount /mnt/pveroot/sys
+sudo umount /mnt/pveroot
+</code>
+
+===== Backup Proxmox itself =====
+
+Just run this script I made.
+
+<code bash backup-proxmox.sh>
+#!/bin/bash
+
+# Define backup directory and filename with today's date
+BACKUP_DIR="./pvebackup"
+DATE=$(date +"%Y%m%d")
+BACKUP_FILE="$BACKUP_DIR/$DATE.tar.gz"
+
+# Create the backup directory if it doesn't exist
+mkdir -p "$BACKUP_DIR"
+
+# Copy config.db to backup directory
+cp /var/lib/pve-cluster/config.db "$BACKUP_DIR/"
+
+# Create a compressed archive of /etc/pve
+tar -czvf "$BACKUP_DIR/pve.tar.gz" /etc/pve
+
+# Bundle both files into a final backup
+tar -czvf "$BACKUP_FILE" "$BACKUP_DIR/config.db" "$BACKUP_DIR/pve.tar.gz"
+
+# Clean up intermediate files
+rm "$BACKUP_DIR/config.db" "$BACKUP_DIR/pve.tar.gz"
+
+# Print success message
+echo "Backup completed: $BACKUP_FILE"
+</code>
+
+For cleaning up backups older then a specific number of days:
+<code bash old-backup-cleanup.sh>
+#!/bin/bash
+
+# Load variables from .env file (if it exists)
+if [ -f .env ]; then
+    source .env
+else
+    echo "Error: .env file not found."
+    exit 1
+fi
+
+# Ensure DAYS is set (default to 20 if not defined)
+DAYS="${CLEANUPDAYS:-20}"
+
+find ./pvebackup -maxdepth 1 -type f -mtime +$DAYS -delete
+</code>
+
+This script requires an ''.env'' file to work.
+
+<code bash .env>
+# .env
+CLEANUPDAYS=20
+</code>
+
+You can run this scripts automatically with the use of a cronjob. To backup the files in the cloud, you can use ''rclone''. Setup a remote and a cronjob with ''crontab -e'' to automate the process.
+<code=bash>
+0 2 * * * /root/Proxmox-simple-automated-backup/backup-proxmox.sh
+15 2 * * * /root/Proxmox-simple-automated-backup/old-backup-cleanup.sh
+30 3 * * * rclone sync /root/Proxmox-simple-automated-backup/pvebackup OneDrive:ProxmoxBackup
+</code>

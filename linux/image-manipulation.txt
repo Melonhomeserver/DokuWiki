@@ -1,0 +1,39 @@
+====== Convert images ======
+
+===== Convert .heic images =====
+
+If you have a lot of .heic images, you can use the ''mogrify'' command from the ''imagemagick'' package to process multiple images at once. Here's an example:
+
+<code bash>
+mogrify -format jpg *.heic
+</code>
+
+===== Lower images quality, maintaining same resolution =====
+
+This bash script can be directly run in the terminal. It lowers the quality of every image in a directory.
+
+<code bash>
+for img in *.jpg; do
+    magick "$img" -quality 40% "output_${img}"
+done
+</code>
+
+You can also use this for single images.
+
+<code bash>
+magick input.jpg -quality 80% output.jpg
+</code>
+
+===== Lower images resolution =====
+
+Same syntax as for the quality commad.
+
+<code bash>
+magick input.jpg -resize 80% output.jpg
+</code>
+
+===== Rename .jpeg to .jpg =====
+
+<code bash>
+for file in *.jpeg; do mv "$file" "${file%.jpeg}.jpg"; done
+</code>

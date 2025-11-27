@@ -1,0 +1,13 @@
+====== YT-DLP ======
+
+===== Youtube downloader =====
+
+First, enter the python virtual environment where yt-dlp is installed!
+
+To download songs in mp3 320K format and metadata:
+
+<code bash>
+yt-dlp -x --audio-format mp3 --audio-quality 320K --embed-metadata https://youtubelink.com
+</code>
+
+Double check the metadata tho. Artist, Album and Song name are correct, usually other things are missing. You can also link Youtube Music.

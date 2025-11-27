@@ -1,0 +1,9 @@
+====== VPN ======
+
+===== Tailscale =====
+
+==== Connect to my exit node ====
+
+<code bash>
+doas tailscale set --exit-node=thinkstation
+</code>

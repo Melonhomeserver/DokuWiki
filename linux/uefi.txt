@@ -1,0 +1,25 @@
+====== UEFI ======
+
+On Linux, if you want to remove old or obsolete boot entries from your UEFI boot menu, you can use the ''efibootmgr'' command. Here's how:
+
+List Boot Entries:
+  * Open a terminal window.
+  * Run the following command to list the current boot entries:
+
+<code bash>
+efibootmgr
+</code>
+
+This will display a list of boot entries along with their indices (numbers).
+
+Identify the entry to remove: Look for the entry corresponding to the operating system you want to remove. Note its index (usually a hexadecimal number).
+
+Delete the Entry: To delete an entry, use the ''-b'' option followed by the index of the entry you want to remove. For example:
+
+<code bash>
+sudo efibootmgr -b XXXX -B
+</code>
+
+Replace XXXX with the actual index of the entry you want to delete.
+
+Verify Changes:After running the command, check the boot menu again to ensure that the unwanted entry has been removed.

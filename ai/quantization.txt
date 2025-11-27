@@ -1,0 +1,20 @@
+====== Quantization ======
+
+===== From Wikipedia: =====
+ 
+//Quantization is the process of constraining an input from a continuous or otherwise large set of values (such as the real numbers) to a discrete set (such as the integers).// 
+
+===== From Hugging Face =====
+
+Quantization is a technique to reduce the computational and memory costs of running inference by representing the weights and activations with low-precision data types like 8-bit integer (''int8'') instead of the usual 32-bit floating point (''float32'').
+
+Reducing the number of bits means the resulting model requires less memory storage, and operations like matrix multiplication can be performed much faster with integer arithmetic.
+
+The most common lower precision data types are:
+    * ''float16'', accumulation data type ''float16''
+    * ''bfloat16'', accumulation data type ''float32''
+    * ''int16'', accumulation data type ''int32''
+    * ''int8'', accumulation data type ''int32''
+
+The **accumulation data type** specifies the type of the result of accumulating (adding, multiplying, etc) values of the data type in question. 
+For example, let’s consider two int8 values A = 127, B = 127, and let’s define C as the sum of A and B: ''C = A + B''. Here the result is much bigger than the biggest representable value in ''int8'', which is ''127''. Hence the need for a larger precision data type to avoid a huge precision loss that would make the whole quantization process useless.

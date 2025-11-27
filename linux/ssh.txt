@@ -1,0 +1,117 @@
+====== SSH ======
+
+===== SCP - File transfer via SSH ======
+
+File transfer via SSh can be done **using ''scp'' (Secure Copy)**: ''scp'' is a legacy command that allows you to copy files between local and remote systems over SSH. It’s similar to the ''cp'' command. 
+
+To copy a file from the **remote machine to your local machine**, use the following syntax:
+
+<code bash>
+scp username@ip_address:/path/to/remote/file local_destination
+</code>
+
+To copy a file from your **local machine to the remote machine**, use this syntax:
+
+<code bash>
+scp local_file username@ip_address:/path/on/remote/system
+</code>
+
+As per usual, use the ''-r'' flag if you want to handle directories.
+
+==== Permission deniend? ====
+
+The file you are trying to transfer is owned by another user. Use the following command to change the ownership.
+
+<code bash>
+sudo chown -R meloncrush:meloncrush file.txt
+</code>
+
+===== Setting up SSH key for services =====
+
+You might need an SSH key for a service, like GitHub or GitLab. 
+
+The first step is generating they SSH key. ''ed25519'' is the encryption type, ''-C'' sets the email associated with the key, ''-f'' specifies the filename for the key.
+
+<code bash>
+ssh-keygen -t ed25519 -C "your_email@example.com" -f ~/.ssh/id_ed25519_gitlab
+</code>
+
+Unless you have specific needs, skip the questions that will popup by pressing enter, and use the default values.
+
+The key has been generated, and we now need to let the ssh agent know.
+
+<code bash>
+eval "$(ssh-agent -s)"
+</code>
+
+We need to add our private key to the agent. So we edit the config file:
+
+<code bash>
+nano ~/.ssh/config
+</code>
+
+And we write the following content inside:
+
+<code bash>
+Host gitlab.com
+  HostName gitlab.com
+  AddKeysToAgent yes
+  User git
+  IdentityFile ~/.ssh/id_ed25519_gitlab
+</code>
+
+Save and then add the key:
+
+<code bash>
+ssh-add ~/.ssh/id_ed25519
+</code>
+
+The next step is to add the key to the service in question. The steps for doing this change depending on your service. But in every case, what you need to paste is the content of the following file:
+
+<code bash>
+cat ~/.ssh/id_ed25519_gitlab.pub
+</code>
+
+Copy the content of the output, and paste it. 
+
+===== Creating SSH keys for VMs access =====
+
+In this example, you will create a single SSH key for your own machine (example: laptop, desktop), and you will put that key in one or more VMs. 
+
+You first need to create an SSH key for your own device:
+
+<code bash>
+ssh-keygen -t ed25519 -f ~/.ssh/laptop_ed25519 -C "laptop@$(uname -n)"
+</code>
+
+Replace "laptop" with whatever name you want, it's just an identifier that makes it easier for you to recognise the key.
+
+You can see the key that you just created by running
+
+<code bash>
+cat ~/.ssh/laptop_ed25519.pub
+</code>
+
+Move the new SSH key to the VM:
+
+<code bash>
+ssh-copy-id -i ~/.ssh/laptop_ed25519.pub user@vm-ip
+</code>
+
+Finally, update the SSH config in your machine, by editing ''~/.ssh/config''
+
+<code bash>
+Host vm1
+  HostName 192.168.1.10  # Replace with actual VM IP
+  User your-username     # Replace with your VM username
+  IdentityFile ~/.ssh/laptop_ed25519  # or desktop_ed25519
+
+Host vm2
+  HostName 192.168.1.11
+  User your-username
+  IdentityFile ~/.ssh/laptop_ed25519
+</code>
+
+You need to, of course, replace the content with the appropriate values.
+
+To check if it works, just login via ssh ''ssh vm1'', and you should be in!

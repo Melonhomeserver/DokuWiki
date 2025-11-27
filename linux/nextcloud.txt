@@ -1,0 +1,11 @@
+====== Nextcloud ======
+
+===== How to clear Nextcloud AIO logs =====
+
+You need to truncate the logs file, like this:
+
+<code=bash>
+sudo truncate -s 0 /var/lib/docker/volumes/nextcloud_aio_nextcloud/_data/data/nextcloud.log
+</code>
+
+Sometimes Nextcloud also creates an extra logs file, the location of which can be found in the ''config.php'' file. For example, it might be in ''.Nextcloud-data/nextcloud.log''.

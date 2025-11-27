@@ -1,0 +1,8 @@
+====== Docker ======
+
+===== Logs =====
+To view the logs in real time, the command is
+
+<code>
+docker compose logs -f [container]
+</code>

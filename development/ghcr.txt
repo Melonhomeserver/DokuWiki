@@ -1,0 +1,63 @@
+====== Github Container Registry ======
+
+===== Upload your images to GHCR =====
+Before starting, make sure that you pulled the last version of your project, and that you built the latest container.
+
+==== Getting your GCHR_TOKEN ====
+To create a token for local use: 
+  * Go to GitHub Settings → Developer Settings → Personal Access Tokens (PAT)
+  * Create a new token with these permissions:
+    * write:packages (to push images)
+    * read:packages (to pull images)
+    * delete:packages (if you want to manage cleanup)
+Save this as GHCR_TOKEN in your local .env file (don't commit this!). 
+
+===== Releasing =====
+
+Remember to commit and push everything first!
+
+First, you need to login using your PAT token, if you haven't already.
+<code bash>
+echo "ghp_yourPATtoken" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+</code>
+
+==== For Docker ====
+Build your image:
+<code bash>
+docker compose build
+</code>
+
+Tag your image:
+<code bash>
+docker tag chiantiestates/backend:latest ghcr.io/meloncrush/backend:1.0.0
+</code>
+
+Push it to GHCR:
+<code bash>
+docker push ghcr.io/meloncrush/backend:1.0.0
+</code>
+
+==== For Git ====
+Merge development into main:
+<code bash>
+git checkout main
+git merge development
+</code>
+
+Tag and push the release:
+<code bash>
+git tag -a v1.0.0 -m "Stable release"
+git push origin v1.0.0
+</code>
+
+Push main (if needed):
+<code bash>
+git push origin main
+</code>
+
+Remember to go back to the development branch:
+<code bash>
+git checkout development
+</code>
+
+Create a GitHub Release from the v1.0.0 tag

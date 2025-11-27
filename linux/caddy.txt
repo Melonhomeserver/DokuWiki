@@ -1,0 +1,110 @@
+====== Caddy ======
+
+===== How to setup a Reverse Proxy with Caddy =====
+
+==== Setting up Docker ====
+This guide assumes that you have a domain and the respective token from DuckDNS, that's pointing to your local machine running Caddy. The deployment will be done using Docker.
+
+To use the Reverse Proxy functionality, you'll have to build a Caddy docker image yourself.
+
+The Docker file is very simple, the important part is importing the proper modules based on your domain provider (in this case, DuckDNS. But you can use Cloudfare too, or any other provider).
+
+<code bash Dockerfile>
+FROM caddy:2.10-builder-alpine AS builder
+
+RUN xcaddy build \
+    --with github.com/caddy-dns/duckdns
+FROM caddy:2.10-alpine
+
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+</code>
+
+We are going to build this image directly from the compose file.
+
+<code bash compose.yaml>
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: caddy
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - LETS_ENCRYPT_EMAIL=${LETS_ENCRYPT_EMAIL}
+      - DUCKDNS_API_TOKEN=${DUCKDNS_API_TOKEN}
+      - ACME_AGREE=true
+    ports:
+      - 82:80
+      - 443:443
+    volumes:
+      - caddy-config:/config
+      - caddy-data:/data
+      - ./Caddyfile:/etc/caddy/Caddyfile
+
+volumes:
+  caddy-config:
+  caddy-data:
+</code>
+
+The compose file needs and environment file where the informations are stored. You can use this template as an example.
+
+<code bash .env>
+DUCKDNS_API_TOKEN=your-duck-dns-token-here
+LETS_ENCRYPT_EMAIL=your@email.org
+</code>
+
+==== The Caddyfile ====
+
+Caddy can be configured in many ways: Caddyfile, JSON, API requests. We are going to use the Caddyfile.
+
+<code bash Caddyfile>
+*.goofynigiri.duckdns.org {
+        tls {
+                dns duckdns {env.DUCKDNS_API_TOKEN}
+                propagation_delay 2m
+        }
+        # ====== Mediaserver ======	
+        @jellyfin host jellyfin.yourdomain.duckdns.org
+        handle @jellyfin {
+                reverse_proxy 192.168.1.x:8096
+        }
+        @prowlarr host prowlarr.yourdomain.duckdns.org
+        handle @prowlarr {
+                reverse_proxy 192.168.1.x:9696
+        }
+        # ====== Photoserver ======
+        @immich host immich.yoursomain.duckdns.org
+	       handle @immich {
+	               reverse_proxy 192.168.1.x:2283
+	       }
+        # ====== Proxmox ======
+        @proxmox host proxmox.yourdomain.duckdns.org
+		       handle @proxmox {
+		               reverse_proxy https://192.168.1.x:8006 {
+					transport http {
+						tls
+						tls_insecure_skip_verify
+					}
+		               }
+		       }
+</code>
+
+As you can see, the configuration is pretty straightforward without much to explain. The comments are there to help with the organization, the list gets quite long after if you add many services. If a service (like Proxmox) defaults to https, you can use the syntax shown in the file.
+
+==== Finishing up ====
+
+That's it! Now run everything with
+
+<code bash>
+docker compose up -d
+</code>
+
+And check the logs
+
+<code bash>
+docker compose logs -f caddy
+</code>
+
+To see if there are any problems, and if the DNS Challenge resolves properly.

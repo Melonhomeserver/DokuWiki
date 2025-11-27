@@ -1,0 +1,28 @@
+====== Gnome ======
+
+===== Changing GNOME workspace switching shortcuts using dconf Editor =====
+
+    * Install ''dconf-editor'' if you haven't already.
+    * Open ''dconf-editor''.
+    * Navigate to ''org'' -> ''gnome'' -> ''desktop'' -> ''wm'' -> ''keybindings''.
+    * Look for the keybindings related to workspace switching. They might be named something like ''switch-to-workspace-up'', ''switch-to-workspace-down'', etc.
+    * Edit these keybindings to use ''['<Primary><Super>Left']'', ''['<Primary><Super>Right']''. 
+
+===== File opening is broken =====
+
+1. Open a terminal.
+2. Run the following command to check what application is currently set to handle directories:
+<code bash>
+xdg-mime query default inode/directory
+</code>
+This should return something like ''org.gnome.Nautilus.desktop''. If it returns the text editor’s ''.desktop'' file, you'll need to reset it.
+
+3. To reset it to Nautilus, use this command:
+<code bash>
+xdg-mime default org.gnome.Nautilus.desktop inode/directory
+</code>
+
+===== Nautilus default sort order =====
+
+From the GUI, Nautilus does not allow setting a default sort order for some reasons.
+If you want to select ''item'' as the default sort order, open ''dconf-editor'' and go to ''org > gnome > nautilus > preferences > default-sort-order''. Here you will be able to change it.

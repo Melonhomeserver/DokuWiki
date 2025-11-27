@@ -1,0 +1,15 @@
+====== Home assistant ======
+
+===== HTTPS =====
+
+Enter using a Linux terminal, open ''/root/config/configuration.yaml''.
+Add the following lines:
+
+<code bash>
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 192.168.1.X  # Replace this with the IP address of your NPM server
+</code>
+
+Restart everything

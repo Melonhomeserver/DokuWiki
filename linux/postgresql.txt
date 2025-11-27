@@ -1,0 +1,60 @@
+====== PostgreSQL ======
+
+===== Install PostgreSQL on Arch Linux =====
+Install the packages ''postgresql'' and ''psql''.
+
+Next we need to initialize the database cluster.
+<code=bash>
+sudo -iu postgres
+initdb --locale en_US.UTF-8 -E UTF8 -D '/var/lib/postgres/data'
+</code>
+
+Start and enable the PostgreSQL service.
+
+<code=bash>
+sudo systemctl enable --now postgresql.service
+</code>
+
+===== Creating a PostgreSQL User for GORM =====
+
+First, connect to PostgreSQL as admin
+
+<code=bash>
+sudo -u postgres psql
+</code>
+
+Create the user.
+
+<code=sql>
+CREATE USER gorm WITH PASSWORD 'your_secure_password_here';
+</code>
+
+Create a Database for the application.
+
+<code=sql>
+CREATE DATABASE your_db_name OWNER gorm;
+</code>
+
+Grant the appropriate permissions.
+
+<code=sql>
+-- Basic permissions for the database
+GRANT CONNECT ON DATABASE your_db_name TO gorm;
+
+-- Full permissions on all tables in the schema (adjust if you need more granular control)
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO gorm;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO gorm;
+GRANT USAGE ON SCHEMA public TO gorm;
+
+-- For future tables (important for migrations)
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO gorm;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO gorm;
+</code>
+
+Verify that the user is there
+
+<code=sql>
+\du  -- Lists all users and their roles
+</code>
+
+To exit, just use ''\q''.

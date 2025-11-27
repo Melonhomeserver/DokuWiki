@@ -1,0 +1,80 @@
+====== LVM ======
+
+===== Resizing partitions =====
+
+**Resize the Extended Partition (/dev/sda2):** 
+  * Launch parted with ''sudo parted''. 
+  * At the parted prompt, use the ''print'' command to display the current state of your disk.
+  * To resize the ''extended'' partition, use the ''resizepart'' command. You’ll be asked for the number of the partition you want to resize, and then specify the new size (which should be the sum of the space on ''/dev/sda2'' and the free space). You need to do the same on the LVM partition (probably ''/dev/sda5''). Exit parted. 
+
+**Verify the new partition:** First, ensure that the new partition is correctly created and recognized by the system. You can use ''lsblk'' or ''fdisk -l'' to list all partitions and verify that the new space is there.
+
+<code bash>
+lsblk
+</code>
+
+or
+
+<code bash>
+sudo fdisk -l
+</code>
+
+**Check the physical volumes:** List the physical volumes to see their current sizes.
+
+<code bash>
+sudo pvs
+</code>
+
+**Resize the physical volume:** If the physical volume (PV) still shows the old size, you need to resize it. Run:
+
+<code bash>
+sudo pvresize /dev/sdaX
+</code>
+
+Replace ''/dev/sdaX'' with the appropriate device name of your physical volume. You can find the correct device name from the output of ''pvs'' or ''lsblk''.
+
+**Verify the volume group size:** After resizing the physical volume, check the volume group (VG) size again to ensure it reflects the new space.
+
+<code bash>
+sudo vgdisplay
+</code>
+
+**Extend the logical volume:** Assuming the volume group now shows the correct size, extend the logical volume. Identify the logical volume name with:
+
+<code bash>
+sudo lvdisplay
+</code>
+
+Then, extend the logical volume:
+
+<code bash>
+sudo lvextend -L +24G /dev/vg_group/lv_home
+</code>
+
+**Resize the filesystem:** Finally, resize the filesystem to make use of the extended logical volume:
+
+<code bash>
+sudo resize2fs /dev/vg_group/lv_home
+</code>
+
+**Verify the new size:** Check the new size of your ''/home'' partition:
+
+<code bash>
+df -h /home
+</code>
+
+===== Troubleshooting =====
+
+**Partition not recognized:** If the new partition is not recognized, you might need to reboot the system or use ''partprobe'' to inform the OS of partition table changes.
+
+<code bash>
+sudo partprobe
+</code>
+
+**Partition table issues:** If the partition table is not correctly updated, you may need to manually edit it with tools like ''parted'' or ''fdisk''.
+
+<code bash>
+sudo parted /dev/sda
+</code>
+
+Use ''print'' to display the partition table and ensure the new space is allocated correctly.

@@ -1,0 +1,33 @@
+====== Linux capabilities ======
+
+Linux capabilities are a feature within the Linux kernel that allows for more precise control over the privileges of individual processes. Traditionally, the concept of privilege on a Unix-like system like Linux has been binary – a process either runs with full root (superuser) or restricted user privileges. 
+However, capabilities introduce a more fine-grained approach by dividing the privileges traditionally associated with the superuser into distinct units that can be independently enabled or disabled. 
+Here's an overview of Linux capabilities:
+
+    * **CAP_AUDIT_CONTROL**: Enables and disables kernel auditing, changes auditing filter rules, and retrieves auditing status and filtering rules.
+    * **CAP_AUDIT_READ**: Allows reading the audit log via a multicast netlink socket.
+    * **CAP_AUDIT_WRITE**: Writes records to the kernel auditing log.
+    * **CAP_BLOCK_SUSPEND**: Employs features that can block system suspend (e.g., epoll(7) EPOLLWAKEUP, /proc/sys/wake_lock).
+    * **CAP_BPF**: Employs privileged BPF (Berkeley Packet Filter) operations.
+    * **CAP_CHECKPOINT_RESTORE**: Allows updating /proc/sys/kernel/ns_last_pid, employing the set_tid feature of clone3(2), and reading symbolic links in /proc/pid/map_files for other processes.
+    * **CAP_CHOWN**: Enables making arbitrary changes to file UIDs and GIDs (see chown(2)).
+    * **CAP_DAC_OVERRIDE**: Bypasses file read, write, and execute permission checks (DAC stands for "discretionary access control").
+    * **CAP_DAC_READ_SEARCH**: Bypasses file read permission checks, directory read and execute permission checks, and allows invoking open_by_handle_at(2) and using linkat(2) with the AT_EMPTY_PATH flag.
+    * **CAP_FOWNER**: Bypasses permission checks on operations that normally require the filesystem UID of the process to match the UID of the file. It also allows setting inode flags, ACLs, and ignoring the directory sticky bit on file deletion.
+
+===== LXC additional capabilities =====
+
+==== Modify the LXC Configuration ====
+
+It might happen that your container needs additional capabilities, //ex: ping, nfs-kernel-server//
+
+To allow the necessary capabilities, you need to adjust the container's configuration file.
+
+1. **Access the Proxmox Host Terminal:** Log in to your Proxmox host machine.
+2. **Locate the Container Configuration File:** The configuration file for your LXC container is usually located in ''/etc/pve/lxc/''. The file name corresponds to your container ID, e.g., ''101.conf''.
+
+<code bash>
+nano 107.conf
+</code>
+
+3. Save and restart the machine.

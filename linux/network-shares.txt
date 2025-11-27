@@ -1,0 +1,182 @@
+====== Network Shares ======
+
+===== Samba shares =====
+
+Samba can be installed with
+
+<code bash>
+sudo apt install samba
+</code>
+
+Check its status
+
+<code bash>
+sudo systemctl status smbd
+</code>
+
+Create the Samba user
+
+<code bash> sudo smbpasswd -a melon </code>
+
+Edit the conf file to add the directory
+
+<code bash> nano /etc/samba/smb.conf </code>
+
+Restart the service after editing the file
+
+<code bash> sudo systemctl restart smbd </code>
+
+Extra: change file ownership in Linux
+
+<code bash> chown -R meloncrush:meloncrush Directory </code>
+
+Template
+
+<code bash>
+[Media Home] 
+comment = Home folder for the Media server 
+path = /user/melon 
+browseable = yes 
+read only = no 
+guest ok = no 
+valid users = melon 
+</code>
+
+===== Transfer files between VMs =====
+
+To transfer files between VMs quickly, the best way is to mount a Samba share via terminal with cifs and move them with rsync. The next steps are to be done in the receiving machine.
+
+Install the CIFS utilities.
+
+<code bash>
+sudo apt install cifs-utils
+</code>
+
+Create a mounting point.
+
+<code bash>
+sudo mkdir -p /mnt/smb_share
+</code>
+
+And now mount the Samba share.
+
+<code bash>
+sudo mount -t cifs //<server_ip>/<share_name> /mnt/smb_share -o username=<smb_username>,password=<smb_password>
+</code>
+
+To verify the mount, just use
+
+<code bash>
+ls /mnt/smb_share
+</code>
+
+Now that the Samba share is mounted, the quickest way to copy the file is to use rsync, and not cp.
+
+<code bash>
+rsync -rlptD --info=progress2 /path/to/source /path/to/destination
+</code>
+
+The flags have the following meaning:
+<code bash>
+      -r, --recursive             recurse into directories
+      -l, --links                 copy symlinks as symlinks
+      -p, --perms                 preserve permissions
+      -t, --times                 preserve modification times
+      -D                          same as --devices --specials
+          --devices               preserve device files (super-user only)
+          --specials              preserve special files
+</code>
+
+To unmount the share once the work is done
+<code bash>
+sudo umount /mnt/smb_share
+</code>
+
+===== Creating NFS shares =====
+
+==== Server side ====
+
+Start by installing the necessary package
+
+<code>
+sudo apt install nfs-kernel-server
+</code>
+
+Check the status and ensure that the service is running
+
+<code>
+systemctl status nfs-kernel-server.service
+</code>
+
+The file that we will need to modify is /etc/exports, this is an example of shared directory in read-write mode. ip-client can also be the hostname.
+
+<code>
+/path/to/shared/directory ip-client(rw,sync,no_subtree_check)
+</code>
+
+After you modify the file, you need to restart the NFS server. Just in case check the status after
+
+<code>
+sudo systemctl restart nfs-kernel-server
+systemctl status nfs-kernel-server
+</code>
+
+==== Client side ====
+
+In here we need need to install the NFS common tools
+
+<code>
+sudo apt install nfs-common
+</code>
+
+Now, to test if the sharing works, we can request a list of the shared directories from the server
+
+<code>
+sudo showmount --exports ip-server
+</code>
+
+Create a folder where to mount the share. For example, it's standard to create it under /mnt.
+
+<code>
+mkdir /mnt/nfs/nfs-share
+</code>
+
+And finally, mount the directory as in the example
+
+<code>
+sudo mount ip-server:/path/to/shared/directory /mnt/nfs/nfs-share
+</code>
+
+You can use df -h to see if the directory is actually mounted.
+Unmounting
+
+To unmount the directory
+
+<code>
+sudo umount /mnt/nfs/nfs-share
+</code>
+
+==== Automount directory ====
+
+Install and check the status of the necessary package
+
+<code>
+sudo apt install autofs
+systemctl status autofs
+</code>
+
+To make this work, it's necessary to do some configuration, starting with auto.master
+
+<code>
+sudo nano /etc/auto.master
+</code>
+
+In the file, we need to add the following line
+
+<code>
+/mnt/nfs /etc/auto.nfs --ghost --timeout=60
+</code>
+
+  * We are telling autofs that out shares will be mounted in the root directory /mnt/nfs, and that it has to look at etc/auto.nfs to see what directories need to be mounted. 
+  * ''--ghost'' creates ghost directories for the filesystem, meaning that the folder structure is always there, but the folders are empty. This is needed because when a program looks for them, they are in fact there.
+  * ''--timeout=60'' means that the share gets unmounted after 60s of not being used. The share is also mounted automatically the moment a program asks for it (since it has access to the ghost directories). This is important for two reasons. It help with avoiding possible files

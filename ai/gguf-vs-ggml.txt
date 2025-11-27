@@ -1,0 +1,16 @@
+====== GGUF vs GGML ======
+
+GGUF and GGML are file formats for quantized models. To interact with these files, you need to use ''llama.cpp''. These formats enable efficient inference from a single file, making the LLM deployment process much more simple and cost-effective.
+
+GGML was an earlier iteration in the evolution of LLM file formats and served as a basis for future improvements. GGML’s relevance has waned. The primary reasons are its slower processing capabilities and lack of advanced features compared to GGUF. It is important to keep in mind that GGML support is no longer available in llama.cpp. 
+
+GGUF offers numerous quality-of-life improvements, making it unlikely for users to prefer older versions:
+
+    * 💾 **Single-file Deployment:** Ensuring ease of distribution and loading without reliance on external files.
+    * 👐🏼 **Extensibility:** It allows adding new features to GGML-based executors and information to GGUF models, maintaining compatibility with existing models.
+    * 🗺️ **mmap compatibility:** Models can be loaded using memory mapping for enhanced speed in loading and saving.
+    * 😊 **User-friendly Design:** Simplified model loading and saving process, eliminating the need for external libraries.
+    * 💿 **Comprehensive Information Storage:** GGUF files contain all necessary data to load a model, requiring no additional input from the user.
+    * 📊 **Quantization Compatibility:** GGUF supports quantization. In this process, model weights, typically stored as 16-bit floating point numbers, are scaled down (e.g., to 4-bit integers) to save computational resources without significantly impacting the model’s power. This is particularly useful for reducing the demands on expensive GPU RAM.
+
+An essential change in GGUF is adopting a key-value structure for hyperparameters, now known as metadata. This shift permits the addition of new metadata without compromising compatibility with existing models. This structure allows for easy integration of new information, preserving compatibility with existing GGUF models.
